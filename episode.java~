@@ -13,6 +13,7 @@ public class episode {
     
     public void runAlgo(int window_size, double min_sup) throws FileNotFoundException {
         ArrayList<ArrayList<String>> CES = TransformToCES("transformed_petro_subset1_feature.csv");
+        int traing_data_size = CES.size()-window_size;
         try {
             writer = new BufferedWriter(new FileWriter("episodes.txt")); 
             /**First: Scan F1 with target**/
@@ -47,7 +48,7 @@ public class episode {
             for (ArrayList<ArrayList<String>> F1_with_target : F1_with_targets) {
                 ArrayList<ArrayList<String>> lastitem = new ArrayList<>();
                 lastitem.add(F1_with_target.get(0));
-                SerialJoin(F1_with_target, lastitem, F1, CES, min_sup, window_size, order);
+                SerialJoin(F1_with_target, lastitem, F1, CES, min_sup, window_size, traing_data_size, order);
                 //System.out.println(f1);
             }
         
@@ -140,7 +141,7 @@ public class episode {
      * 
      *   
      */  
-    private void SerialJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> lastItem, ArrayList<ArrayList<ArrayList<String>>> F1, ArrayList<ArrayList<String>> CES, double min_sup, int window_size, HashMap<ArrayList<ArrayList<String>>, Integer> order) {
+    private void SerialJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> lastItem, ArrayList<ArrayList<ArrayList<String>>> F1, ArrayList<ArrayList<String>> CES, double min_sup, int window_size, int traing_data_size, HashMap<ArrayList<ArrayList<String>>, Integer> order) {
         for (ArrayList<ArrayList<String>> f_j : F1) {
             //for (ArrayList<ArrayList<String>> fk : F1) {
             //    System.out.print(fk + " ");
@@ -152,24 +153,26 @@ public class episode {
                 ArrayList<Double> sup_cof = new ArrayList<>();            
                 sup_cof = ScanCES(CES, equal_join, window_size);  
                 double sup = sup_cof.get(0);   
-                double conf = sup_cof.get(1);     
+                double conf = sup_cof.get(1);                      
                 if (sup >= min_sup) {
                     //OUTPUT RESULT
                     //e.add_frequent_episode(equal_join);
                     //System.out.println("equal: "  + equal_join);
                     try {
-                        saveEpisode(equal_join, sup, conf);
+                        double sup_percentage = sup / (double) traing_data_size;
+                        System.out.println(sup + " " + traing_data_size + " " + sup_percentage);
+                        saveEpisode(equal_join, sup_percentage, conf);
                     } catch (IOException e) {
                         System.out.println("IOException!");
                     }
-                    SerialJoin(equal_join, f_j, F1, CES, min_sup, window_size,  order);
+                    SerialJoin(equal_join, f_j, F1, CES, min_sup, window_size, traing_data_size, order);
                 }
             } 
             
             ArrayList<ArrayList<String>> temporal_join = temporalJoin(alpha, f_j); 
             ArrayList<Double> sup_cof = new ArrayList<>();   
             sup_cof = ScanCES(CES, temporal_join, window_size);  
-            double sup = sup_cof.get(0);  
+            double sup = sup_cof.get(0);              
             double conf = sup_cof.get(1);  
             if (sup >= min_sup) {
                     //System.out.println("temporaljoin: " + temporal_join);
@@ -177,11 +180,12 @@ public class episode {
                     //e.add_frequent_episode(temporal_join);
             //        System.out.println("temp: "  + temporal_join);
                     try {
-                        saveEpisode(temporal_join, sup, conf);
+                    	double sup_percentage = sup / (double) traing_data_size;
+                        saveEpisode(temporal_join, sup_percentage, conf);
                     } catch (IOException e) {
                         System.out.println("IOException!");
                     }
-                    SerialJoin(temporal_join, f_j, F1, CES, min_sup, window_size,  order);
+                    SerialJoin(temporal_join, f_j, F1, CES, min_sup, window_size, traing_data_size, order);
             }
             
         }
@@ -280,7 +284,7 @@ public class episode {
             }
             if (size == join.size()) {
                 sup++;      
-                System.out.println("Join: " + join + "   Training: " + SubSequence + " "  + start + " " + end);          
+//                System.out.println("Join: " + join + "   Training: " + SubSequence + " "  + start + " " + end);          
             }
         }
         result.add(sup);
