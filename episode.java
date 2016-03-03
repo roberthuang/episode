@@ -315,7 +315,8 @@ public class episode {
         // if the result should be saved to a file
 	if(writer != null){
 	    StringBuilder r = new StringBuilder("");
-	    for(ArrayList<String> episode : frequentEpisode){
+	    for(int i = 0; i < frequentEpisode.size() - 1; i++){
+	    	ArrayList<String> episode = frequentEpisode.get(i);
 	        for(String event : episode){
 		    String string = event.toString();
 		    r.append(string);
@@ -323,9 +324,13 @@ public class episode {
 	        }
 		r.append("-1 ");
 	    }
-	    r.append(" #SUP: ");
+	    r.append("-> ");
+	    String Class = frequentEpisode.get(frequentEpisode.size()-1).get(0);
+	    String string = Class.toString();
+	    r.append(string);
+	    r.append("	:	");
 	    r.append(sup);
-	    r.append(" #CONF: ");
+	    r.append(",	");
 	    r.append(conf);
 	    writer.write(r.toString());
 	    writer.newLine();
