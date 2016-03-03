@@ -4,25 +4,17 @@ public class episode {
     // writer to write output file
     static BufferedWriter writer = null;
     public static void main(String[] args) throws FileNotFoundException {
-        int window_size = 2;
-        int min_sup = 20;
+        int window_size = 3;
+        double min_sup = 20;
         //Run
         episode e = new episode();
         e.runAlgo(window_size, min_sup);   
     }
     
-    public void runAlgo(int window_size, int min_sup) throws FileNotFoundException {
+    public void runAlgo(int window_size, double min_sup) throws FileNotFoundException {
         ArrayList<ArrayList<String>> CES = TransformToCES("transformed_petro_subset1_feature.csv");
         try {
             writer = new BufferedWriter(new FileWriter("episodes.txt")); 
-            
-            //Debug 
-            int i = 1;
-            if (i == 0) {
-                for (ArrayList<String> events : CES) {
-                    System.out.println(events);
-                }
-            }
             /**First: Scan F1 with target**/
             ArrayList<ArrayList<ArrayList<String>>> F1_with_targets = ScanF1_include_target(CES, min_sup, window_size);
             //for (ArrayList<ArrayList<String>> F1_with_target : F1_with_targets) {
@@ -73,7 +65,7 @@ public class episode {
      * SE: Simultaneous Event Sets
      * E: Event   
      */  
-    private ArrayList<ArrayList<ArrayList<String>>> ScanF1(ArrayList<ArrayList<String>> CES, int min_sup) {
+    private ArrayList<ArrayList<ArrayList<String>>> ScanF1(ArrayList<ArrayList<String>> CES, double min_sup) {
         ArrayList<ArrayList<ArrayList<String>>> result = new ArrayList<>();   
         HashMap <String, Integer> set = new HashMap<>();
         for (ArrayList<String> SE : CES) {
@@ -107,7 +99,7 @@ public class episode {
      * SE: Simultaneous Event Sets
      * E: Event   
      */  
-    private ArrayList<ArrayList<ArrayList<String>>> ScanF1_include_target(ArrayList<ArrayList<String>> CES, int min_sup, int window_size) {
+    private ArrayList<ArrayList<ArrayList<String>>> ScanF1_include_target(ArrayList<ArrayList<String>> CES, double min_sup, int window_size) {
         //for (ArrayList<String> c : CES) {
         
         //    System.out.println(c);
@@ -183,7 +175,7 @@ public class episode {
      * 
      *   
      */  
-    private void SerialJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> lastItem, ArrayList<ArrayList<ArrayList<String>>> F1, ArrayList<ArrayList<String>> CES, int min_sup, int window_size, HashMap<ArrayList<ArrayList<String>>, Integer> order) {
+    private void SerialJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> lastItem, ArrayList<ArrayList<ArrayList<String>>> F1, ArrayList<ArrayList<String>> CES, double min_sup, int window_size, HashMap<ArrayList<ArrayList<String>>, Integer> order) {
         for (ArrayList<ArrayList<String>> f_j : F1) {
             //for (ArrayList<ArrayList<String>> fk : F1) {
             //    System.out.print(fk + " ");
@@ -191,14 +183,17 @@ public class episode {
             //System.out.println();
             if (order.get(f_j) >  order.get(lastItem)) {
                 ArrayList<ArrayList<String>> equal_join = equalJoin(alpha, f_j); 
-                //System.out.println(equal_join);                
-                int sup = ScanCES(CES, equal_join, window_size);       
+                //System.out.println(equal_join);    
+                ArrayList<Double> sup_cof = new ArrayList<>();            
+                sup_cof = ScanCES(CES, equal_join, window_size);  
+                double sup = sup_cof.get(0);   
+                double conf = sup_cof.get(1);     
                 if (sup >= min_sup) {
                     //OUTPUT RESULT
                     //e.add_frequent_episode(equal_join);
-                    System.out.println("equal: "  + equal_join);
+                    //System.out.println("equal: "  + equal_join);
                     try {
-                        saveEpisode(equal_join, sup);
+                        saveEpisode(equal_join, sup, conf);
                     } catch (IOException e) {
                         System.out.println("IOException!");
                     }
@@ -207,14 +202,17 @@ public class episode {
             } 
             
             ArrayList<ArrayList<String>> temporal_join = temporalJoin(alpha, f_j); 
-            int sup = ScanCES(CES, temporal_join, window_size);  
+            ArrayList<Double> sup_cof = new ArrayList<>();   
+            sup_cof = ScanCES(CES, temporal_join, window_size);  
+            double sup = sup_cof.get(0);  
+            double conf = sup_cof.get(1);  
             if (sup >= min_sup) {
-                    System.out.println("temporaljoin: " + temporal_join);
+                    //System.out.println("temporaljoin: " + temporal_join);
                     //OUTPUT RESULT
                     //e.add_frequent_episode(temporal_join);
             //        System.out.println("temp: "  + temporal_join);
                     try {
-                        saveEpisode(temporal_join, sup);
+                        saveEpisode(temporal_join, sup, conf);
                     } catch (IOException e) {
                         System.out.println("IOException!");
                     }
@@ -284,11 +282,13 @@ public class episode {
     }
     
     /**
-     * Count Support
+     * Count spport count
      *   
      */ 
-    int ScanCES(ArrayList<ArrayList<String>> CES, ArrayList<ArrayList<String>> join, int window_size) {
-        int sup = 0;
+    ArrayList<Double> ScanCES(ArrayList<ArrayList<String>> CES, ArrayList<ArrayList<String>> join, int window_size) {
+        double sup = 0;
+        double prefix = 0;
+        ArrayList<Double> result = new ArrayList<>();
         for (int i = 0; i <= CES.size()-window_size-1; i++) {
             int start = i;
             int end = start + window_size;
@@ -301,16 +301,24 @@ public class episode {
                     if (SubSequence.get(j).containsAll(join.get(k))) {
                         current = k;
                         size++;
+                        //Count prefix support count
+                        if (size == join.size()-1) {
+                            prefix++;          
+                        }
+                        
                     }
                     break;
                 }
             
             }
             if (size == join.size()) {
-                sup++;
+                sup++;                
             }
         }
-        return sup;
+        result.add(sup);
+        double confidence = sup / prefix;
+        result.add(confidence);
+        return result;
     }
     
     ArrayList<ArrayList<String>> GetSubS(ArrayList<ArrayList<String>> CES, int start, int end) {
@@ -331,7 +339,7 @@ public class episode {
      * 
      *   
      */     
-    private void saveEpisode(ArrayList<ArrayList<String>> frequentEpisode, int sup) throws IOException {                
+    private void saveEpisode(ArrayList<ArrayList<String>> frequentEpisode, double sup, double conf) throws IOException {                
         // if the result should be saved to a file
 	if(writer != null){
 	    StringBuilder r = new StringBuilder("");
@@ -345,6 +353,8 @@ public class episode {
 	    }
 	    r.append(" #SUP: ");
 	    r.append(sup);
+	    r.append(" #CONF: ");
+	    r.append(conf);
 	    writer.write(r.toString());
 	    writer.newLine();
 	} else{
