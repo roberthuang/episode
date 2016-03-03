@@ -4,7 +4,7 @@ public class episode {
     // writer to write output file
     static BufferedWriter writer = null;
     public static void main(String[] args) throws FileNotFoundException {
-        int window_size = 3;
+        int window_size = 2;
         double min_sup = 20;
         //Run
         episode e = new episode();
@@ -36,9 +36,9 @@ public class episode {
                     continue;
                 }	            
             }
-            for (ArrayList<ArrayList<String>> f : order.keySet()) {
-                System.out.println(f  + " " + order.get(f));      
-            }
+            //for (ArrayList<ArrayList<String>> f : order.keySet()) {
+            //    System.out.println(f  + " " + order.get(f));      
+            //}
             //for (ArrayList<ArrayList<String>> f : F1) {
             //    System.out.println(f);      
             //}
@@ -254,6 +254,7 @@ public class episode {
         double sup = 0;
         double prefix = 0;
         ArrayList<Double> result = new ArrayList<>();
+        //System.out.println(CES.size()-window_size);
         for (int i = 0; i <= CES.size()-window_size-1; i++) {
             int start = i;
             int end = start + window_size;
@@ -265,6 +266,7 @@ public class episode {
                 for (int k = current; k < join.size(); k++) {
                     if (SubSequence.get(j).containsAll(join.get(k))) {
                         current = k;
+                        current++;
                         size++;
                         //Count prefix support count
                         if (size == join.size()-1) {
@@ -277,7 +279,8 @@ public class episode {
             
             }
             if (size == join.size()) {
-                sup++;                
+                sup++;      
+                System.out.println("Join: " + join + "   Training: " + SubSequence + " "  + start + " " + end);          
             }
         }
         result.add(sup);

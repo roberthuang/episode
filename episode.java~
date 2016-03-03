@@ -4,7 +4,7 @@ public class episode {
     // writer to write output file
     static BufferedWriter writer = null;
     public static void main(String[] args) throws FileNotFoundException {
-        int window_size = 3;
+        int window_size = 2;
         double min_sup = 20;
         //Run
         episode e = new episode();
@@ -36,9 +36,9 @@ public class episode {
                     continue;
                 }	            
             }
-            for (ArrayList<ArrayList<String>> f : order.keySet()) {
-                System.out.println(f  + " " + order.get(f));      
-            }
+            //for (ArrayList<ArrayList<String>> f : order.keySet()) {
+            //    System.out.println(f  + " " + order.get(f));      
+            //}
             //for (ArrayList<ArrayList<String>> f : F1) {
             //    System.out.println(f);      
             //}
@@ -58,42 +58,7 @@ public class episode {
             System.out.println("IOException!");
         }
     }
-    
-    
-    /**
-     * Find frequent 1 episode F1 
-     * SE: Simultaneous Event Sets
-     * E: Event   
-     */  
-    private ArrayList<ArrayList<ArrayList<String>>> ScanF1(ArrayList<ArrayList<String>> CES, double min_sup) {
-        ArrayList<ArrayList<ArrayList<String>>> result = new ArrayList<>();   
-        HashMap <String, Integer> set = new HashMap<>();
-        for (ArrayList<String> SE : CES) {
-            for (int i = 0; i < SE.size()-1; i++) {
-                String E = SE.get(i);
-                if (set.get(E) == null) {
-                    int count = 1;
-                    set.put(E, count);
-                } else {
-                    int count = set.get(E);
-                    count++;
-                    set.put(E, count);
-                }
-            }
-        }
-        
-        for (String E : set.keySet()) {
-            if (set.get(E) >= min_sup) {
-                ArrayList<ArrayList<String>> SE = new ArrayList<>();
-                ArrayList<String> Sub_SE = new ArrayList<>();;
-                Sub_SE.add(E);
-                SE.add(Sub_SE);
-                result.add(SE);
-            }
-        }
-        return result;
-    }
-    
+     
     /**
      * Find frequent 1 episode F1 including target
      * SE: Simultaneous Event Sets
@@ -289,6 +254,7 @@ public class episode {
         double sup = 0;
         double prefix = 0;
         ArrayList<Double> result = new ArrayList<>();
+        //System.out.println(CES.size()-window_size);
         for (int i = 0; i <= CES.size()-window_size-1; i++) {
             int start = i;
             int end = start + window_size;
@@ -300,6 +266,7 @@ public class episode {
                 for (int k = current; k < join.size(); k++) {
                     if (SubSequence.get(j).containsAll(join.get(k))) {
                         current = k;
+                        current++;
                         size++;
                         //Count prefix support count
                         if (size == join.size()-1) {
@@ -312,7 +279,8 @@ public class episode {
             
             }
             if (size == join.size()) {
-                sup++;                
+                sup++;      
+                System.out.println("Join: " + join + "   Training: " + SubSequence + " "  + start + " " + end);          
             }
         }
         result.add(sup);
