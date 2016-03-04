@@ -1,14 +1,27 @@
 import java.io.*;
 import java.util.*;
+//import ca.pfv.spmf.tools.MemoryLogger;
+/*** 
+ * This is a episode rule mining algo modified from "Efficient Mining of Frequent Episodes from Complex Sequences" paper.
+ * By robert huang at 2016/03/04.
+ *
+ */
 public class episode {
     // writer to write output file
     static BufferedWriter writer = null;
+    // for statistics
+    private long startTime;
+    private long endTime;
+    
     public static void main(String[] args) throws FileNotFoundException {
-        int window_size = 2;
-        double min_sup = 20;
+        int window_size = 5;
+        double min_sup = 8;
         //Run
         episode e = new episode();
-        e.runAlgo(window_size, min_sup);   
+      
+        e.runAlgo(window_size, min_sup);  
+     
+        e.printStatistics();
     }
     
     public void runAlgo(int window_size, double min_sup) throws FileNotFoundException {
@@ -42,54 +55,52 @@ public class episode {
             //}
             //for (ArrayList<ArrayList<String>> f : F1) {
             //    System.out.println(f);      
-            //}
-            
-
+            //}   
+                     
+            // save the start time
+	    startTime = System.currentTimeMillis();
             for (ArrayList<ArrayList<String>> F1_with_target : F1_with_targets) {
                 ArrayList<ArrayList<String>> lastitem = new ArrayList<>();
                 lastitem.add(F1_with_target.get(0));
                 SerialJoin(F1_with_target, lastitem, F1, CES, min_sup, window_size, traing_data_size, order);
                 //System.out.println(f1);
-            }
-        
+            }   
+            // save the end time
+	    endTime = System.currentTimeMillis(); 
+	         
             if(writer != null){
 	        writer.close();
 	    }
+	    
 	} catch (IOException e) {
             System.out.println("IOException!");
         }
     }
      
     /**
-     * Find frequent 1 episode F1 including target
-     * SE: Simultaneous Event Sets
-     * E: Event   
+     * Find Frequent 1 episode(F1) including class, eg. <A, Class>, F1: A
+     * @param CES
+     * @param min_sup
+     * @param window_size
+     *    
      */  
     private ArrayList<ArrayList<ArrayList<String>>> ScanF1_include_target(ArrayList<ArrayList<String>> CES, double min_sup, int window_size) {
-        //for (ArrayList<String> c : CES) {
-        
-        //    System.out.println(c);
-        //}
         ArrayList<ArrayList<ArrayList<String>>> result = new ArrayList<>();   
         HashMap <ArrayList<ArrayList<String>>, Integer> set = new HashMap<>();
         for (int i = 0; i <= CES.size()-window_size-1; i++) {
             ArrayList<String> SE = CES.get(i);
-            //    System.out.println(SE);
             for (int j = 0; j < SE.size()-1; j++) {
                 ArrayList<ArrayList<String>> new_SE = new ArrayList<>();
                 String event = SE.get(j);
-                //System.out.println(event);
                 //F1
                 ArrayList<String> event1 = new ArrayList<>();
                 event1.add(event);
-                
-                //Target
+                //Class
                 ArrayList<String> event2 = new ArrayList<>();
                 ArrayList<String> SE_with_target = CES.get(i+window_size);
                 String target =  SE_with_target.get(SE_with_target.size()-1);                
                 event2.add(target);
-                
-                //F1 including target
+                //F1 including Class
                 new_SE.add(event1);
                 new_SE.add(event2);
                 if (set.get(new_SE) == null) {
@@ -99,8 +110,7 @@ public class episode {
                     int count = set.get(new_SE);
                     count++;
                     set.put(new_SE, count);
-                }             
-            
+                }                         
             }        
         }
         
@@ -109,14 +119,13 @@ public class episode {
             if (set.get(SE) >= min_sup) {
                 result.add(SE);
             }        
-        }
-        
+        }        
         return result;
     }
     
     /**
      * Transform to complex event sequence
-     * 
+     * @param fullpath  :  the path of input file
      *   
      */      
     private ArrayList<ArrayList<String>> TransformToCES(String fullpath) throws FileNotFoundException{
@@ -138,8 +147,14 @@ public class episode {
     
     /**
      * Serial Join
-     * 
-     *   
+     * @param alpha  :  
+     * @param lastItem  : 
+     * @param F1  : 
+     * @param CES  : 
+     * @param min_sup  :  
+     * @param window_size  : 
+     * @param target_data_size  : 
+     * @param order  : 
      */  
     private void SerialJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> lastItem, ArrayList<ArrayList<ArrayList<String>>> F1, ArrayList<ArrayList<String>> CES, double min_sup, int window_size, int traing_data_size, HashMap<ArrayList<ArrayList<String>>, Integer> order) {
         for (ArrayList<ArrayList<String>> f_j : F1) {
@@ -195,7 +210,8 @@ public class episode {
     /**
      * Equal Join
      * Ex. <A,Clas> and <C> -> <AC, Class>
-     *   
+     * @param alpha
+     * @param f_j  
      */  
     ArrayList<ArrayList<String>> equalJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> f_j) {
         ArrayList<ArrayList<String>> join = new ArrayList<>();
@@ -224,7 +240,8 @@ public class episode {
     /**
      * Temporal Join
      * Ex. <A, Class> and <C> -> <A,C,Class>
-     *   
+     * @param alpha
+     * @param f_j   
      */      
     ArrayList<ArrayList<String>> temporalJoin(ArrayList<ArrayList<String>> alpha, ArrayList<ArrayList<String>> f_j) {
         ArrayList<ArrayList<String>> join = new ArrayList<>();
@@ -263,7 +280,7 @@ public class episode {
             int start = i;
             int end = start + window_size;
             //MATCH
-            ArrayList<ArrayList<String>> SubSequence = GetSubS(CES, start, end);
+            ArrayList<ArrayList<String>> SubSequence = GetSubSequence(CES, start, end);
             int size = 0;
             int current = 0;
             for (int j = 0; j < SubSequence.size(); j++) {
@@ -293,7 +310,7 @@ public class episode {
         return result;
     }
     
-    ArrayList<ArrayList<String>> GetSubS(ArrayList<ArrayList<String>> CES, int start, int end) {
+    ArrayList<ArrayList<String>> GetSubSequence(ArrayList<ArrayList<String>> CES, int start, int end) {
          ArrayList<ArrayList<String>> result = new ArrayList<>();
          for (int i = start; i <= end; i++) {
              ArrayList<String> SE_result = new ArrayList<>(); 
@@ -337,5 +354,21 @@ public class episode {
 	} else{
 	    System.out.println("Error!");
 	}
+    }
+    
+    /**
+     * Print statistics about the algorithm execution to System.out.
+     * @param size  the size of the database
+     */
+    public void printStatistics() {
+        StringBuilder r = new StringBuilder(200);
+	r.append("=============  EPISODE RULE MINING - STATISTICS =============\n Total time ~ ");
+	r.append(endTime - startTime);
+	r.append(" ms\n");
+	//r.append(" Max memory (mb) : " );
+	//r.append(MemoryLogger.getInstance().getMaxMemory());
+	r.append('\n');
+	r.append("=============================================================\n");
+	System.out.println(r.toString());
     }
 }
