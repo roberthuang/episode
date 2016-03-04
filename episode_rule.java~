@@ -6,7 +6,7 @@ import ca.pfv.spmf.tools.MemoryLogger;
  * By robert huang at 2016/03/04.
  *
  */
-public class episode {
+public class episode_rule {
     // writer to write output file
     static BufferedWriter writer = null;
     // for statistics
@@ -14,10 +14,10 @@ public class episode {
     private long endTime;
     
     public static void main(String[] args) throws FileNotFoundException {
-        int window_size = 5;
+        int window_size = 2;
         double min_sup = 8;
         //Run
-        episode e = new episode();
+        episode_rule e = new episode_rule();
       
         e.runAlgo(window_size, min_sup);  
      
@@ -33,9 +33,9 @@ public class episode {
         int traing_data_size = CES.size()-window_size;
         
         try {
-            writer = new BufferedWriter(new FileWriter("episodes.txt")); 
+            writer = new BufferedWriter(new FileWriter("episode_rules.txt")); 
             /**First: Scan F1 with target**/
-            ArrayList<ArrayList<ArrayList<String>>> F1_with_targets = ScanF1_include_target(CES, min_sup, window_size);
+            ArrayList<ArrayList<ArrayList<String>>> F1_with_targets = ScanF1_include_target(CES, min_sup, window_size, traing_data_size);
             //for (ArrayList<ArrayList<String>> F1_with_target : F1_with_targets) {
             //	System.out.println(F1_with_target);            
             //}
@@ -91,9 +91,10 @@ public class episode {
      * @param window_size
      *    
      */  
-    private ArrayList<ArrayList<ArrayList<String>>> ScanF1_include_target(ArrayList<ArrayList<String>> CES, double min_sup, int window_size) {
+    private ArrayList<ArrayList<ArrayList<String>>> ScanF1_include_target(ArrayList<ArrayList<String>> CES, double min_sup, int window_size, int traing_data_size) throws IOException {
         ArrayList<ArrayList<ArrayList<String>>> result = new ArrayList<>();   
         HashMap <ArrayList<ArrayList<String>>, Integer> set = new HashMap<>();
+        HashMap <ArrayList<String>, Integer> set_f1 = new HashMap<>();
         for (int i = 0; i <= CES.size()-window_size-1; i++) {
             ArrayList<String> SE = CES.get(i);
             for (int j = 0; j < SE.size()-1; j++) {
@@ -106,9 +107,18 @@ public class episode {
                 ArrayList<String> event2 = new ArrayList<>();
                 ArrayList<String> SE_with_target = CES.get(i+window_size);
                 String target =  SE_with_target.get(SE_with_target.size()-1);                
-                event2.add(target);
-                //F1 including Class
+                event2.add(target);                
                 new_SE.add(event1);
+                if (set_f1.get(event1) == null) {
+                    int count_f1 = 1;
+                    set_f1.put(event1, count_f1);
+                } else {
+                    int count_f1 = set_f1.get(event1);
+                    count_f1++;
+                    set_f1.put(event1, count_f1);
+                }  
+                
+                //F1 including Class
                 new_SE.add(event2);
                 if (set.get(new_SE) == null) {
                     int count = 1;
@@ -124,7 +134,9 @@ public class episode {
         for (ArrayList<ArrayList<String>> SE : set.keySet()) {
         //    System.out.println("HASH: " + SE);
             if (set.get(SE) >= min_sup) {
-            	saveEpisode(SE, set.get(SE), )
+                double sup = set.get(SE) / (double)traing_data_size;
+                double confidence = set.get(SE) / (double) set_f1.get(SE.get(0));
+            	saveEpisode(SE, sup, confidence);
                 result.add(SE);
             }        
         }       
