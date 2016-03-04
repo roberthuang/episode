@@ -129,7 +129,7 @@ public class episode {
             ArrayList<ArrayList<String>> down = new ArrayList<>();
             ArrayList<String> sub_down = new ArrayList<>();
             sub_down.add("Down");
-             down.add(sub_down);
+            down.add(sub_down);
             
             if (lastItem.equals(rise) || lastItem.equals(down)) continue;
             if (number.get(f_j) > number.get(lastItem)) { 

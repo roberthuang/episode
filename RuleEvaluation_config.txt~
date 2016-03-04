@@ -1,0 +1,10 @@
+{
+	"path"		:	"episodes.txt",
+	"output"	:	"rules.txt",
+	"contains_event"	:
+	[
+	   "Rise",
+	   "Down"
+	    	
+	]
+}
