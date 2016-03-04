@@ -1,6 +1,6 @@
 import java.io.*;
 import java.util.*;
-//import ca.pfv.spmf.tools.MemoryLogger;
+import ca.pfv.spmf.tools.MemoryLogger;
 /*** 
  * This is a episode rule mining algo modified from "Efficient Mining of Frequent Episodes from Complex Sequences" paper.
  * By robert huang at 2016/03/04.
@@ -25,8 +25,13 @@ public class episode {
     }
     
     public void runAlgo(int window_size, double min_sup) throws FileNotFoundException {
+    	//To check the memory usage
+        MemoryLogger.getInstance().reset();
+        
         ArrayList<ArrayList<String>> CES = TransformToCES("transformed_petro_subset1_feature.csv");
+        
         int traing_data_size = CES.size()-window_size;
+        
         try {
             writer = new BufferedWriter(new FileWriter("episodes.txt")); 
             /**First: Scan F1 with target**/
@@ -59,12 +64,14 @@ public class episode {
                      
             // save the start time
 	    startTime = System.currentTimeMillis();
+	    
             for (ArrayList<ArrayList<String>> F1_with_target : F1_with_targets) {
                 ArrayList<ArrayList<String>> lastitem = new ArrayList<>();
                 lastitem.add(F1_with_target.get(0));
                 SerialJoin(F1_with_target, lastitem, F1, CES, min_sup, window_size, traing_data_size, order);
                 //System.out.println(f1);
             }   
+            
             // save the end time
 	    endTime = System.currentTimeMillis(); 
 	         
@@ -119,7 +126,7 @@ public class episode {
             if (set.get(SE) >= min_sup) {
                 result.add(SE);
             }        
-        }        
+        }       
         return result;
     }
     
@@ -170,6 +177,7 @@ public class episode {
                 double sup = sup_cof.get(0);   
                 double conf = sup_cof.get(1);                      
                 if (sup >= min_sup) {
+                    MemoryLogger.getInstance().checkMemory(); 
                     //OUTPUT RESULT
                     //e.add_frequent_episode(equal_join);
                     //System.out.println("equal: "  + equal_join);
@@ -204,6 +212,7 @@ public class episode {
             }
             
         }
+        MemoryLogger.getInstance().checkMemory();
     
     }
     
@@ -365,8 +374,9 @@ public class episode {
 	r.append("=============  EPISODE RULE MINING - STATISTICS =============\n Total time ~ ");
 	r.append(endTime - startTime);
 	r.append(" ms\n");
-	//r.append(" Max memory (mb) : " );
-	//r.append(MemoryLogger.getInstance().getMaxMemory());
+	r.append('\n');
+	r.append(" Max memory (mb) : " );
+	r.append(MemoryLogger.getInstance().getMaxMemory());
 	r.append('\n');
 	r.append("=============================================================\n");
 	System.out.println(r.toString());
