@@ -232,7 +232,7 @@ public class episode_rule {
     
     /**
      * Equal Join
-     * Ex. <A,Clas> and <C> -> <AC, Class>
+     * Ex. <A,Class> and <C> -> <AC, Class>
      * @param alpha
      * @param f_j  
      */  
